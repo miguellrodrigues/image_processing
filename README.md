@@ -9,7 +9,7 @@ Software em desenvolvimento, responsável por tratar as imagens no processo de A
 Use o gerenciador de pacotes [pip](https://pip.pypa.io/en/stable/) para instalar.
 
 ```bash
-pip install -r requiriments.txt
+pip install -r requirements.txt
 ```
 ### Técnicas Implementadas
 
