@@ -1,4 +1,4 @@
-<center> <h1></center>
+<center> <h1></h1> </center>
 
 Software em desenvolvimento, responsável por tratar as imagens no processo de Automação da Braquiterapia de Próstata.
 
