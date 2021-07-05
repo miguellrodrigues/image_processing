@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 window = cv2.namedWindow("output", cv2.WINDOW_NORMAL)
-img = cv2.imread("images/desenho.png")
+img = cv2.imread("images/white_dots.png")
 
 blurred = cv2.GaussianBlur(img, (11, 11), 0)
 thresh = cv2.cvtColor(blurred, cv2.COLOR_RGB2HSV)
