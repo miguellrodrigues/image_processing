@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-ultrasound_image = cv2.imread("images/image.png", cv2.IMREAD_UNCHANGED)
+ultrasound_image = cv2.imread("images/template_matching.png", cv2.IMREAD_UNCHANGED)
 pattern_image = cv2.imread("images/pattern.png")
 
 h = pattern_image.shape[0]
