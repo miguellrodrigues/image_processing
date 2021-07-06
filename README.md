@@ -17,7 +17,7 @@ pip install -r requirements.txt
 * Template Matching
 
 ## Contrubuindo
-Pull requests são bem vindos. Para mudançãs grandes, por favor abra uma issue antes para discutir o que gostaria de alterar.
+Pull requests são bem vindos. Para mudanças grandes, por favor abra uma issue antes para discutir o que gostaria de alterar.
 
 ## Licença
 [MIT](https://choosealicense.com/licenses/mit/)
