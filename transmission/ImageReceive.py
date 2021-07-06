@@ -27,7 +27,7 @@ class ImageReceiverThread(Thread):
     def run(self):
         packet, _ = self.socket.recvfrom(self.BUFF_SIZE)
 
-        data = base64.b64decode(packet, ' /')
+        data = base64.b64decode(packet, b' /')
 
         np_data = np.frombuffer(data, dtype=np.uint8)
         frame = cv2.imdecode(np_data, 1)
