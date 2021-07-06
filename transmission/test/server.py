@@ -11,8 +11,9 @@ def show_image(data):
         cv2.destroyAllWindows()
 
 
-receiver = ImageReceiver(
-    'localhost',
-    8756,
-    show_image
-)
+if __name__ == '__main__':
+    receiver = ImageReceiver(
+        'localhost',
+        8756,
+        show_image
+    )

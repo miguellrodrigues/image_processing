@@ -27,8 +27,8 @@ class ImageSender:
                 frame = self.igt.join()
 
                 # frame = imutils.resize(frame, width=800, height=600)
-                frame = frame[:, :, :3]
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # frame = frame[:, :, :3]
+                # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
                 encoded, buffer = cv2.imencode(
                     '.jpg',
