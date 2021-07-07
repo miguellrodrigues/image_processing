@@ -4,7 +4,7 @@ from transmission.ImageReceiver import ImageReceiver
 import time
 
 
-class Ims:
+class ImageProcess:
     fps, tm, last_time = (0, 0, 0)
 
     def show(self, data):
@@ -22,10 +22,10 @@ class Ims:
 
 
 if __name__ == '__main__':
-    s = Ims()
+    ip = ImageProcess()
 
     receiver = ImageReceiver(
         'localhost',
         8756,
-        s.show
+        ip.show
     )

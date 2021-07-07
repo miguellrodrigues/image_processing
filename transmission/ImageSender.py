@@ -60,8 +60,7 @@ class ImageSender:
 
             encoded, buffer = cv2.imencode(
                 '.jpg',
-                frame,
-                [cv2.IMWRITE_JPEG_QUALITY, 95]
+                frame
             )
 
             data = base64.b64encode(buffer)
