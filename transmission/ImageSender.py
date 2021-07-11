@@ -1,15 +1,20 @@
 import base64
+import socket
 
 import cv2
-import websockets
-import asyncio
+import imutils
 
 from transmission.ImageGrab import ImageGrabThread
 
 
+def chunks(l, n):
+    n = max(1, n)
+    return (l[i:i + n] for i in range(0, len(l), n))
+
+
 class ImageSender:
     def __init__(self, uri, port):
-        self.uri = "ws://{}:{}".format(uri, port)
+        self.uri = "ws://localhost:9002"
 
         print("Listening at: {}:{}".format(uri, port))
 
@@ -20,60 +25,47 @@ class ImageSender:
 
         self.igt.start()
 
-        # asyncio.get_event_loop().run_until_complete(self.send())
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 10)
+        self._socket.connect(('127.0.0.1', 25565))
 
-        q = asyncio.Queue(2)
+        self.state = 'send_size'
 
-        asyncio.get_event_loop().create_task(self.produce(q))
-        asyncio.get_event_loop().create_task(self.consume(q))
+        self.start()
 
-        asyncio.get_event_loop().run_forever()
-
-    # async def send(self):
-    #     while True:
-    #         self.igt.run()
-    #         frame = self.igt.join()
-    #
-    #         # frame = imutils.resize(frame, width=800, height=600)
-    #         # frame = frame[:, :, :3]
-    #         frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
-    #
-    #         encoded, buffer = cv2.imencode(
-    #             '.jpg',
-    #             frame,
-    #             [cv2.IMWRITE_JPEG_QUALITY, 95]
-    #         )
-    #
-    #         data = base64.b64encode(buffer)
-    #
-    #         async with websockets.connect(self.uri) as ws:
-    #             await ws.send(data)
-
-    async def produce(self, queue):
+    def start(self):
         while True:
             self.igt.run()
             frame = self.igt.join()
 
-            # frame = imutils.resize(frame, width=800, height=600)
+            frame = imutils.resize(frame, width=800, height=600)
             # frame = frame[:, :, :3]
             frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
 
-            encoded, buffer = cv2.imencode(
+            _, buffer = cv2.imencode(
                 '.jpg',
                 frame
             )
 
             data = base64.b64encode(buffer)
 
-            await queue.put(data)
+            if self.state == 'send_data':
+                if len(data) > 65535:
+                    ch = chunks(data, 5)
 
-    async def consume(self, queue):
-        while True:
-            data = await queue.get()
+                    for chunk in ch:
+                        self._socket.sendall(chunk)
+                else:
+                    self._socket.sendall(data)
+            elif self.state == 'send_size':
+                self._socket.sendall((len(data)).to_bytes(byteorder='big', length=4))
 
-            async with websockets.connect(self.uri) as ws:
-                await ws.send(data)
-                queue.task_done()
+            rec = self._socket.recv(1)
+
+            if str(rec).__contains__("."):
+                self.state = 'send_data'
+            elif str(rec).__contains__("/"):
+                self.state = 'send_size'
 
     def stop(self):
         self.running = False
