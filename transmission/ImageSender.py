@@ -1,10 +1,9 @@
 import base64
 import socket
-from math import ceil
-
 import cv2
 import imutils
-
+import struct
+import ctypes
 from transmission.ImageGrab import ImageGrabThread
 
 
@@ -29,56 +28,61 @@ class ImageSender:
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1)
         self._socket.connect(('127.0.0.1', 25565))
 
-        self.state = 'send_size'
+        self.state = 'send_data'
 
         self.start()
 
     def update_state(self):
-        rec = self._socket.recv(1)
+        rec = self._socket.recvfrom(1)
 
         if str(rec).__contains__("."):
             self.state = 'send_data'
         elif str(rec).__contains__("/"):
-            self.state = 'send_size'
+            self.state = 'wait'
 
     def send_data(self, data):
         length = len(data)
 
         if length > 65535:
-            n = int(ceil(length / 65535))
+            _data = split_data(data, 1024 * 64)
 
-            _data = split_data(data, n)
+            for i in range(len(_data)):
+                _d = _data[i]
 
-            for _d in _data:
-                self._socket.sendall(_d)
-                self.update_state()
+                self._socket.sendall(
+                    struct.pack('I', i) + _d
+                )
 
+            self._socket.sendall(b'EOF')
         else:
-            self._socket.sendall(data)
-            self.update_state()
+            self._socket.sendall(
+                struct.pack('I', 1 & 0xffffffff) + data
+            )
+
+            self._socket.sendall(b'EOF')
 
     def start(self):
         while True:
-            self.igt.run()
-            frame = self.igt.join()
-
-            # frame = imutils.resize(frame, width=512, height=600)
-            # frame = frame[:, :, :3]
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
-
-            _, buffer = cv2.imencode(
-                '.jpg',
-                frame
-            )
-
-            data = base64.b64encode(buffer)
+            print(self.state)
 
             if self.state == 'send_data':
+                self.igt.run()
+                frame = self.igt.join()
+
+                frame = imutils.resize(frame, width=512, height=512)
+                # frame = frame[:, :, :3]
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
+
+                _, buffer = cv2.imencode(
+                    '.jpg',
+                    frame
+                )
+
+                data = base64.b64encode(buffer)
+
                 self.send_data(data)
 
-            elif self.state == 'send_size':
-                self._socket.sendall((len(data)).to_bytes(byteorder='big', length=4))
-                self.update_state()
+            self.update_state()
 
     def stop(self):
         self.running = False
