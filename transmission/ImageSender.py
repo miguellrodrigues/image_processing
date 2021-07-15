@@ -1,12 +1,9 @@
 import base64
-import queue
 import socket
 import struct
-from threading import Thread
-import asyncio
+import time
 
 import cv2
-import imutils
 
 from transmission.ImageGrab import ImageGrabThread
 
@@ -17,45 +14,6 @@ def split_data(d, n=2):
         r.append(d[index: index + n])
 
     return r
-
-
-class SocketDataSender(Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None, ssocket):
-        super().__init__(group, target, name, args, kwargs, daemon=daemon)
-
-        self.data = None
-        self.old_data = None
-
-        self.socket = ssocket
-
-        self.queue = queue.Queue(2)
-
-    def update_data(self, i, data):
-        self.queue.put((i, data))
-
-    def run(self):
-        while True:
-            data = self.queue.get()
-
-            if data is None:
-                continue
-
-            await self.socket.send(
-                struct.pack('I', data[0])
-                + data[1]
-            )
-
-    def join(self, timeout=None):
-        super().join(timeout)
-
-    def read_server_response(self):
-        rec = self.socket.recvfrom(1)
-
-        if str(rec).__contains__("."):
-            return 'send_data'
-        elif str(rec).__contains__("/"):
-            return 'wait'
 
 
 class ImageSender:
@@ -73,21 +31,24 @@ class ImageSender:
 
         self.state = 'send_data'
 
-        self.data_sender = SocketDataSender(ssocket=self._socket)
-        self.data_sender.start()
-
         self.start()
 
+    def read_server_response(self):
+        rec = self._socket.recvfrom(1)
+
+        if str(rec).__contains__("."):
+            return 'send_data'
+        elif str(rec).__contains__("/"):
+            return 'wait'
+
     def send_data(self, data):
-        _data = split_data(data, 1024 * 64)
-
-        for i in range(len(_data)):
-            print("Sending new data... {}".format(i))
-
-            self.data_sender.update_data(
-                i,
-                _data[i]
+        for i in range(len(data)):
+            self._socket.send(
+                struct.pack('I', i)
+                + data[i]
             )
+
+            time.sleep(.001)
 
         self._socket.send(b'EOF')
 
@@ -97,9 +58,9 @@ class ImageSender:
                 self.igt.run()
                 frame = self.igt.join()
 
-                frame = imutils.resize(frame, width=1280, height=720)
+                # frame = imutils.resize(frame, width=512, height=512)
                 # frame = frame[:, :, :3]
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
+                # frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
 
                 _, buffer = cv2.imencode(
                     '.jpg',
@@ -108,9 +69,9 @@ class ImageSender:
 
                 data = base64.b64encode(buffer)
 
-                self.send_data(data)
+                self.send_data(split_data(data, 1024 * 32))
 
-            self.state = self.data_sender.read_server_response()
+            self.state = self.read_server_response()
 
     def stop(self):
         self.running = False
