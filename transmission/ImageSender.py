@@ -3,6 +3,7 @@ import socket
 import struct
 
 import cv2
+import imutils
 
 from transmission.ImageGrab import ImageGrabThread
 
@@ -16,7 +17,7 @@ def split_data(d, n=2):
 
 
 class ImageSender:
-    def __init__(self):
+    def __init__(self, ip, port):
         self.running = True
 
         self.image = None
@@ -26,7 +27,7 @@ class ImageSender:
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1)
-        self._socket.connect(('127.0.0.1', 25565))
+        self._socket.connect((ip, port))
 
         self.state = 'send_data'
 
@@ -54,10 +55,10 @@ class ImageSender:
     def start(self):
         while True:
             if self.state == 'send_data':
-                self.igt.run()
                 frame = self.igt.join()
+                self.igt.run()
 
-                # frame = imutils.resize(frame, width=512, height=512)
+                frame = imutils.resize(frame, width=1280, height=720)
                 # frame = frame[:, :, :3]
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
 
@@ -68,7 +69,7 @@ class ImageSender:
 
                 data = base64.b64encode(buffer)
 
-                self.send_data(split_data(data, 1024 * 32))
+                self.send_data(split_data(data, 1024 * 63))
 
             self.state = self.read_server_response()
 
