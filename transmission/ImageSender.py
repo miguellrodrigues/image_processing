@@ -1,7 +1,6 @@
 import base64
 import socket
 import struct
-import time
 
 import cv2
 
@@ -17,7 +16,7 @@ def split_data(d, n=2):
 
 
 class ImageSender:
-    def __init__(self, uri, port):
+    def __init__(self):
         self.running = True
 
         self.image = None
@@ -48,7 +47,7 @@ class ImageSender:
                 + data[i]
             )
 
-            time.sleep(.001)
+            self.read_server_response()
 
         self._socket.send(b'EOF')
 
@@ -60,7 +59,7 @@ class ImageSender:
 
                 # frame = imutils.resize(frame, width=512, height=512)
                 # frame = frame[:, :, :3]
-                # frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
 
                 _, buffer = cv2.imencode(
                     '.jpg',
