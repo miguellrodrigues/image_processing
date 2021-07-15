@@ -70,6 +70,8 @@ class ImageSender:
 
                 self.send_data(split_data(data, 1024 * 32))
 
+            self.state = self.read_server_response()
+
     def stop(self):
         self.running = False
         self.igt.stop()
